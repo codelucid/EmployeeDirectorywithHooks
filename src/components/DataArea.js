@@ -1,18 +1,33 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import Nav from "./Nav";
 import DataTable from "./DataTable";
 import API from "../utils/API";
 import "../styles/DataArea.css";
 
-export default class DataArea extends Component {
+function DataArea() {
+    const [employees, setEmployees] = useState([])
+    const [filteredEmployees, setFilteredEmployees] = useState([])
+    const [order, setOrder] = useState([])
 
-    state = {
-        employees: [{}],
-        filteredEmployees: [{}],
-        order: "descend"
+    useEffect(() => {
+        loadEmployees()
+    }, [])
+
+    function loadEmployees() {
+        API.search().then(res => {
+            setEmployees(res.data.results);
+            setFilteredEmployees(res.data.results);
+        })
+            .catch(err => console.log(err));
     };
 
-    headings = [
+    // state = {
+    //     employees: [{}],
+    //     filteredEmployees: [{}],
+    //     order: "descend"
+    // };
+
+    let headings = [
         { name: "Image", width: "10%" },
         { name: "Name", width: "10%" },
         { name: "Phone", width: "20%" },
@@ -20,19 +35,19 @@ export default class DataArea extends Component {
         { name: "DOB", width: "10%" }
     ]
 
-    handleSort = heading => {
-        if (this.state.order === "descend") {
-            this.setState({
-                order: "ascend"
-            })
+    function handleSort(heading) {
+        if (order === "descend") {
+            setOrder(
+                "ascend"
+            )
         } else {
-            this.setState({
-                order: "descend"
-            })
+            setOrder(
+                "descend"
+            )
         }
 
         const compareFnc = (a, b) => {
-            if (this.state.order === "ascend") {
+            if (order === "ascend") {
                 // account for missing values
                 if (a[heading] === undefined) {
                     return 1;
@@ -60,48 +75,38 @@ export default class DataArea extends Component {
                 }
             }
         }
-        const sortedUsers = this.state.filteredEmployees.sort(compareFnc);
-        this.setState({ filteredEmployees: sortedUsers });
+        const sortedUsers = filteredEmployees.sort(compareFnc);
+        setFilteredEmployees(sortedUsers);
     }
 
-    handleSearchChange = event => {
+    function handleSearchChange(event) {
         console.log(event.target.value);
         const filter = event.target.value;
-        const filteredList = this.state.employees.filter(item => {
+        const filteredList = employees.filter(item => {
             // merge data together, then see if user input is anywhere inside
             let values = Object.values(item)
                 .join("")
                 .toLocaleLowerCase();
             return values.indexOf(filter.toLowerCase()) !== -1;
         });
-        this.setState({ filteredEmployees: filteredList });
-    }
-    componentDidMount() {
-        API.search().then(res => {
-            this.setState({
-                employees: res.data.results,
-                filteredEmployees: res.data.results
-            })
-        })
-            .catch(err => console.log(err));
+        setFilteredEmployees(filteredList);
     }
 
-    render() {
-        return (
-            <>
-                <Nav handleSearchChange={this.handleSearchChange} />
-                <div className="data-area">
-                    <DataTable
-                        headings={this.headings}
-                        employees={this.state.filteredEmployees}
-                        handleSort={this.handleSort}
-                    />
-                </div>
-            </>
-        );
-    }
+    return (
+        <>
+            <Nav handleSearchChange={handleSearchChange} />
+            <div className="data-area">
+                <DataTable
+                    headings={headings}
+                    employees={filteredEmployees}
+                    handleSort={handleSort}
+                />
+            </div>
+        </>
+    );
+
 }
-
+export default DataArea;
 // handleSearchChange = event => {
 
 // From this.state.employees and event.target.value, generate filteredEmployees
